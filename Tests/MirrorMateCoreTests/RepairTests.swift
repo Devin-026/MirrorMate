@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 import MirrorMateCore
 
 struct CheckFailure: Error { let message: String }
@@ -100,6 +101,31 @@ final class RepairTests {
         report.pairing = .paired
         XCTAssertFalse(report.canRepair)
     }
+    func testPanelViewportFitsShortAndNarrowDisplays() {
+        for size in [CGSize(width: 1440, height: 850), CGSize(width: 1024, height: 560), CGSize(width: 440, height: 390)] {
+            let screen = CGRect(origin: .zero, size: size)
+            let anchor = CGRect(x: size.width - 25, y: size.height, width: 20, height: 24)
+            let viewport = PopoverGeometry.viewport(visibleFrame: screen, anchor: anchor)
+            XCTAssertTrue(viewport.width <= size.width - 32)
+            XCTAssertTrue(viewport.height <= size.height - 32)
+            XCTAssertTrue(viewport.height > 0)
+        }
+    }
+    func testPanelClampsToItsOwnSecondaryScreenWithNegativeOrigin() {
+        let screen = CGRect(x: -1600, y: 140, width: 1600, height: 900)
+        let frame = CGRect(x: -200, y: 950, width: 484, height: 660)
+        let fitted = PopoverGeometry.clamp(frame, to: screen)
+        XCTAssertTrue(screen.contains(fitted))
+        XCTAssertTrue(fitted.maxX < 0, "The panel must remain on the secondary display")
+        XCTAssertEqual(fitted.size, frame.size)
+    }
+    func testPanelClampsLeftEdgeAndOversizedWindow() {
+        let screen = CGRect(x: 300, y: -900, width: 1200, height: 850)
+        let oversized = PopoverGeometry.clamp(CGRect(x: -100, y: -1000, width: 1600, height: 1200), to: screen)
+        XCTAssertTrue(screen.contains(oversized))
+        let leftEdge = PopoverGeometry.clamp(CGRect(x: 250, y: -800, width: 484, height: 660), to: screen)
+        XCTAssertTrue(screen.contains(leftEdge))
+    }
 }
 
 @main enum ChecksMain {
@@ -112,7 +138,10 @@ final class RepairTests {
             ("testRejectsForeignOrUnmarkedBackupWithoutStoppingService", { try $0.testRejectsForeignOrUnmarkedBackupWithoutStoppingService() }),
             ("testDiagnosticsDistinguishUnknownFromPermissionDenied", { $0.testDiagnosticsDistinguishUnknownFromPermissionDenied() }),
             ("testVideoFrameDoesNotRemainConnectedAfterDisconnectOrAppExit", { $0.testVideoFrameDoesNotRemainConnectedAfterDisconnectOrAppExit() }),
-            ("testRepairRecommendationRequiresRepeatedFailureAndPendingPairing", { $0.testRepairRecommendationRequiresRepeatedFailureAndPendingPairing() })
+            ("testRepairRecommendationRequiresRepeatedFailureAndPendingPairing", { $0.testRepairRecommendationRequiresRepeatedFailureAndPendingPairing() }),
+            ("testPanelViewportFitsShortAndNarrowDisplays", { $0.testPanelViewportFitsShortAndNarrowDisplays() }),
+            ("testPanelClampsToItsOwnSecondaryScreenWithNegativeOrigin", { $0.testPanelClampsToItsOwnSecondaryScreenWithNegativeOrigin() }),
+            ("testPanelClampsLeftEdgeAndOversizedWindow", { $0.testPanelClampsLeftEdgeAndOversizedWindow() })
         ]
         var failed = 0
         for (name, check) in checks {

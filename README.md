@@ -15,6 +15,7 @@ A small, native Mac menu bar companion for iPhone Mirroring. See what is getting
 - Saves the entire original cache before rebuilding it. Restore a selected backup from the same panel.
 - Attempts to roll back if a service restart fails. Neither cache is intentionally deleted during repair or restore.
 - Copies a short report without device names, Apple Account details, serial numbers, identifiers, or raw logs.
+- Keeps the menu bar panel within its display, with a scrollable body and always-visible header and footer.
 
 Everything runs locally. There is no telemetry, account system, backend, automatic updater, or network request in the diagnostic and repair code. The source-code link opens GitHub in your browser.
 
@@ -70,6 +71,14 @@ Render the example interface without touching live pairing:
 ```sh
 swift run MirrorMate --render-preview docs/preview.png
 ```
+
+Check constrained native layouts, including long messages and small viewports:
+
+```sh
+swift run MirrorMate --check-layout
+```
+
+`swift run MirrorMate --check-popover` briefly opens and closes a sample menu bar panel to verify its actual window bounds. Neither layout check changes pairing.
 
 ## Contribute
 

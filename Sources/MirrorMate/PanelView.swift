@@ -13,10 +13,37 @@ enum Palette {
 
 struct PanelView: View {
     @ObservedObject var model: MateModel
+    var viewport: CGSize? = nil
     var body: some View {
         VStack(spacing: 0) {
-            header
-            VStack(alignment: .leading, spacing: 20) {
+            header.fixedSize(horizontal: false, vertical: true)
+            if viewport != nil {
+                ScrollView(.vertical) {
+                    content
+                }
+                .scrollIndicators(.automatic)
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                content
+            }
+            footer.fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(width: viewport?.width ?? 484, height: viewport?.height)
+        .background(Palette.background)
+        .foregroundStyle(Palette.ink)
+        .preferredColorScheme(.light)
+        .alert("Rebuild the pairing cache?", isPresented: $model.showRepairConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Back up & repair", action: model.repair)
+        } message: {
+            Text("MirrorMate will close iPhone Mirroring, save the original cache, and restart the pairing service. iPhone notifications and widgets may need to sync again. You may need to authorize mirroring again. Your Apple Account and network settings will not change.")
+        }
+        .sheet(isPresented: $model.showBackups) { BackupsView(model: model) }
+        .sheet(isPresented: $model.showAbout) { AboutView() }
+    }
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 20) {
                 connectionCard
                 VStack(spacing: 0) {
                     sectionLabel("CONNECTION CHECK") {
@@ -52,21 +79,7 @@ struct PanelView: View {
                 if model.report?.pairing == .inaccessible {
                     Button("Allow folder access…", action: model.allowFolder).buttonStyle(OrangeButtonStyle()).disabled(model.isBusy)
                 }
-            }.padding(.horizontal, 22).padding(.bottom, 20)
-            footer
-        }
-        .frame(width: 484)
-        .background(Palette.background)
-        .foregroundStyle(Palette.ink)
-        .preferredColorScheme(.light)
-        .alert("Rebuild the pairing cache?", isPresented: $model.showRepairConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Back up & repair", action: model.repair)
-        } message: {
-            Text("MirrorMate will close iPhone Mirroring, save the original cache, and restart the pairing service. iPhone notifications and widgets may need to sync again. You may need to authorize mirroring again. Your Apple Account and network settings will not change.")
-        }
-        .sheet(isPresented: $model.showBackups) { BackupsView(model: model) }
-        .sheet(isPresented: $model.showAbout) { AboutView() }
+        }.padding(.horizontal, 22).padding(.bottom, 20)
     }
     private var header: some View {
         HStack {
@@ -175,7 +188,7 @@ struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
-            HStack { Text("MirrorMate").font(.system(size: 24, weight: .semibold)); Spacer(); Text("0.1.0").font(.system(size: 12)).foregroundStyle(.secondary) }
+            HStack { Text("MirrorMate").font(.system(size: 24, weight: .semibold)); Spacer(); Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.1").font(.system(size: 12)).foregroundStyle(.secondary) }
             Text("A little help connecting.").font(.system(size: 15)).foregroundStyle(Palette.orange)
             Text("A small, independent menu bar companion for iPhone Mirroring. Check your connection, rebuild a stuck pairing cache, and keep a way back.").font(.system(size: 12)).lineSpacing(4)
             Text("Checks and repairs run locally. MirrorMate does not upload diagnostics, read your passwords, or sign you out. Repair support is limited to the recognized pairing-cache format; not every connection issue can be repaired.").font(.system(size: 11)).foregroundStyle(.secondary).lineSpacing(4)
