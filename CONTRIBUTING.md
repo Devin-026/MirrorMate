@@ -8,6 +8,6 @@ MirrorMate aims to make a narrow, reversible repair understandable. Keep diagnos
 - Refuse symlinked or unrecognized cache paths; do not broaden privileges or automatically sign the user out.
 - Keep raw logs and personal device information out of shareable reports.
 - Describe which macOS and iOS versions were actually tested. Mark untested compatibility as unknown.
-- Keep the English interface concise, accessible, and native to macOS.
+- Keep the English and Simplified Chinese interfaces concise, accessible, and native to macOS.
 
 The first release is intentionally small. New repairs should have independent evidence, a supported detection rule, a backup/recovery story, and meaningful failure tests.

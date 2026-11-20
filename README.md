@@ -1,5 +1,7 @@
 # MirrorMate
 
+[English](README.md) · [简体中文](README.zh-CN.md)
+
 **A little help connecting.**
 
 A small, native Mac menu bar companion for iPhone Mirroring. See what is getting in the way, repair a stuck system pairing cache when the checks support it, and keep a way back.
@@ -16,12 +18,16 @@ A small, native Mac menu bar companion for iPhone Mirroring. See what is getting
 - Attempts to roll back if a service restart fails. Neither cache is intentionally deleted during repair or restore.
 - Copies a short report without device names, Apple Account details, serial numbers, identifiers, or raw logs.
 - Keeps the menu bar panel within its display, with a scrollable body and always-visible header and footer.
+- Follows your system language, with English and Simplified Chinese options in Settings.
+- Stays open when you click elsewhere by default. Use the pin to switch back to automatic dismissal, or the × button to close the panel.
 
 Everything runs locally. There is no telemetry, account system, backend, automatic updater, or network request in the diagnostic and repair code. The source-code link opens GitHub in your browser.
 
 ## Get started
 
 Download a community build from [Releases](https://github.com/Devin-026/MirrorMate/releases), unzip it, and move **MirrorMate.app** to Applications. Open it and click the iPhone icon in your menu bar.
+
+The gear opens Settings, where language and the keep-open preference can be changed immediately and saved locally.
 
 1. Click **Run check**.
 2. Follow the result. Many issues need a setting change or normal iPhone Mirroring setup, rather than a cache reset.
@@ -69,7 +75,7 @@ swift run MirrorMate --diagnose
 Render the example interface without touching live pairing:
 
 ```sh
-swift run MirrorMate --render-preview docs/preview.png
+swift run MirrorMate --render-preview docs/preview.png --language en
 ```
 
 Check constrained native layouts, including long messages and small viewports:

@@ -24,8 +24,10 @@ cat > "$task_app/Contents/Info.plist" <<'PLIST'
 <key>CFBundleName</key><string>MirrorMate</string>
 <key>CFBundleDisplayName</key><string>MirrorMate</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.1.1</string>
-<key>CFBundleVersion</key><string>1</string>
+<key>CFBundleShortVersionString</key><string>0.1.2</string>
+<key>CFBundleVersion</key><string>3</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string></array>
 <key>CFBundleIconFile</key><string>MirrorMate</string>
 <key>LSMinimumSystemVersion</key><string>15.0</string>
 <key>LSUIElement</key><true/>
@@ -37,7 +39,7 @@ PLIST
 # Ad-hoc signing is for a local/community build. It is not Developer ID notarization.
 codesign --force --sign - "$task_app"
 codesign --verify --strict "$task_app"
-task_zip="dist/MirrorMate-0.1.1-${task_arch}.zip"
+task_zip="dist/MirrorMate-0.1.2-${task_arch}.zip"
 ditto -c -k --sequesterRsrc --keepParent "$task_app" "$task_zip"
-(cd dist; shasum -a 256 "MirrorMate-0.1.1-${task_arch}.zip" > "MirrorMate-0.1.1-${task_arch}.zip.sha256")
+(cd dist; shasum -a 256 "MirrorMate-0.1.2-${task_arch}.zip" > "MirrorMate-0.1.2-${task_arch}.zip.sha256")
 echo "Built $task_zip"

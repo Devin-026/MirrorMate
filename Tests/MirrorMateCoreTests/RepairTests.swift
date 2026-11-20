@@ -126,6 +126,23 @@ final class RepairTests {
         let leftEdge = PopoverGeometry.clamp(CGRect(x: 250, y: -800, width: 484, height: 660), to: screen)
         XCTAssertTrue(screen.contains(leftEdge))
     }
+    func testLanguageFollowsSystemAndRespectsExplicitOverride() {
+        let chineseSystem = ["zh-Hans-HK", "en-HK"]
+        XCTAssertTrue(AppLanguage.system.resolvesToChinese(preferredLanguages: chineseSystem))
+        XCTAssertFalse(AppLanguage.english.resolvesToChinese(preferredLanguages: chineseSystem))
+        XCTAssertTrue(AppLanguage.simplifiedChinese.resolvesToChinese(preferredLanguages: ["en-US"]))
+        XCTAssertFalse(AppLanguage.system.resolvesToChinese(preferredLanguages: []))
+    }
+    func testChineseConnectionAndRecoveryMessagesAndEnglishFallback() {
+        let zh = Localizer(language: .simplifiedChinese)
+        let en = Localizer(language: .english)
+        XCTAssertEqual(zh.text("Pairing is stuck"), "配对卡住了")
+        XCTAssertEqual(zh.text("Back up & repair"), "备份并修复")
+        XCTAssertEqual(zh.text("Close panel"), "收起面板")
+        XCTAssertEqual(en.text("Back up & repair"), "Back up & repair")
+        XCTAssertEqual(zh.text("arm64"), "arm64", "Technical identifiers must not be rewritten")
+        XCTAssertTrue(zh.text(MateError.busy.localizedDescription).contains("修复"))
+    }
 }
 
 @main enum ChecksMain {
@@ -141,7 +158,9 @@ final class RepairTests {
             ("testRepairRecommendationRequiresRepeatedFailureAndPendingPairing", { $0.testRepairRecommendationRequiresRepeatedFailureAndPendingPairing() }),
             ("testPanelViewportFitsShortAndNarrowDisplays", { $0.testPanelViewportFitsShortAndNarrowDisplays() }),
             ("testPanelClampsToItsOwnSecondaryScreenWithNegativeOrigin", { $0.testPanelClampsToItsOwnSecondaryScreenWithNegativeOrigin() }),
-            ("testPanelClampsLeftEdgeAndOversizedWindow", { $0.testPanelClampsLeftEdgeAndOversizedWindow() })
+            ("testPanelClampsLeftEdgeAndOversizedWindow", { $0.testPanelClampsLeftEdgeAndOversizedWindow() }),
+            ("testLanguageFollowsSystemAndRespectsExplicitOverride", { $0.testLanguageFollowsSystemAndRespectsExplicitOverride() }),
+            ("testChineseConnectionAndRecoveryMessagesAndEnglishFallback", { $0.testChineseConnectionAndRecoveryMessagesAndEnglishFallback() })
         ]
         var failed = 0
         for (name, check) in checks {

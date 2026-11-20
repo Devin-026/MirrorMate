@@ -1,13 +1,15 @@
 import AppKit
 import SwiftUI
+import Combine
 import MirrorMateCore
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     var statusItem: NSStatusItem!
     let popover = NSPopover()
     let layoutProbe = CommandLine.arguments.contains("--check-popover")
-    let model = MateModel(preview: CommandLine.arguments.contains("--check-popover"))
+    let model = MateModel(preview: CommandLine.arguments.contains("--check-popover"), languageOverride: MirrorMateMain.languageOverride(CommandLine.arguments))
     var panelController: NSHostingController<PanelView>!
+    var preferenceObserver: AnyCancellable?
     func applicationDidFinishLaunching(_ notification: Notification) {
         if !layoutProbe, let existing = NSRunningApplication.runningApplications(withBundleIdentifier: "org.mirrormate.app").first(where: { $0.processIdentifier != getpid() }) {
             existing.activate(); NSApp.terminate(nil); return
@@ -15,7 +17,11 @@ import MirrorMateCore
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.image = NSImage(systemSymbolName: "iphone", accessibilityDescription: "MirrorMate")
         statusItem.button?.target = self; statusItem.button?.action = #selector(toggle)
-        popover.behavior = .transient
+        popover.behavior = model.keepOpen ? .applicationDefined : .transient
+        preferenceObserver = model.$keepOpen.removeDuplicates().sink { [weak self] pinned in
+            self?.popover.behavior = pinned ? .applicationDefined : .transient
+        }
+        model.closePanel = { [weak self] in self?.popover.performClose(nil) }
         popover.animates = false
         popover.delegate = self
         panelController = NSHostingController(rootView: PanelView(model: model, viewport: CGSize(width: 484, height: 660)))
@@ -55,6 +61,13 @@ import MirrorMateCore
         let fits = screen.visibleFrame.contains(window.frame)
         let contentFits = abs(size.width - expected.width) < 1 && abs(size.height - expected.height) < 1
         print("\(fits && contentFits ? "PASS" : "FAIL") native menu bar popover: window \(window.frame), content \(size), viewport \(expected)")
+        let wasPinned = model.keepOpen
+        model.keepOpen = true
+        let pinnedBehavior = popover.behavior == .applicationDefined
+        model.keepOpen = false
+        let transientBehavior = popover.behavior == .transient
+        model.keepOpen = wasPinned
+        print("\(pinnedBehavior && transientBehavior ? "PASS" : "FAIL") pin toggles native popover behavior in both directions")
         let args = CommandLine.arguments
         if let index = args.firstIndex(of: "--check-popover"), index + 1 < args.count, !args[index + 1].hasPrefix("--"),
            let bitmap = panelController.view.bitmapImageRepForCachingDisplay(in: panelController.view.bounds) {
@@ -62,7 +75,7 @@ import MirrorMateCore
             if let data = bitmap.representation(using: .png, properties: [:]) { try? data.write(to: URL(fileURLWithPath: args[index + 1])) }
         }
         popover.performClose(nil)
-        if !fits || !contentFits { exit(1) }
+        if !fits || !contentFits || !pinnedBehavior || !transientBehavior { exit(1) }
         NSApp.terminate(nil)
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { show(); return true }
@@ -70,6 +83,10 @@ import MirrorMateCore
 }
 
 @main enum MirrorMateMain {
+    static func languageOverride(_ arguments: [String]) -> AppLanguage? {
+        guard let index = arguments.firstIndex(of: "--language"), index + 1 < arguments.count else { return nil }
+        return AppLanguage(rawValue: arguments[index + 1])
+    }
     @MainActor static func main() {
         let arguments = CommandLine.arguments
         if arguments.contains("--check-layout") {
@@ -84,7 +101,8 @@ import MirrorMateCore
         if let index = arguments.firstIndex(of: "--render-preview"), arguments.count > index + 1 {
             _ = NSApplication.shared
             NSApp.setActivationPolicy(.prohibited)
-            let renderer = ImageRenderer(content: PanelView(model: MateModel(preview: true)))
+            let language = languageOverride(arguments)
+            let renderer = ImageRenderer(content: PanelView(model: MateModel(preview: true, languageOverride: language)))
             renderer.scale = 2
             if let image = renderer.cgImage, let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) {
                 do { try png.write(to: URL(fileURLWithPath: arguments[index + 1])); print("Preview written.") }

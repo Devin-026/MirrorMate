@@ -33,64 +33,74 @@ struct PanelView: View {
         .background(Palette.background)
         .foregroundStyle(Palette.ink)
         .preferredColorScheme(.light)
-        .alert("Rebuild the pairing cache?", isPresented: $model.showRepairConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Back up & repair", action: model.repair)
+        .alert(model.text("Rebuild the pairing cache?"), isPresented: $model.showRepairConfirmation) {
+            Button(model.text("Cancel"), role: .cancel) {}
+            Button(model.text("Back up & repair"), action: model.repair)
         } message: {
-            Text("MirrorMate will close iPhone Mirroring, save the original cache, and restart the pairing service. iPhone notifications and widgets may need to sync again. You may need to authorize mirroring again. Your Apple Account and network settings will not change.")
+            Text(model.text("MirrorMate will close iPhone Mirroring, save the original cache, and restart the pairing service. iPhone notifications and widgets may need to sync again. You may need to authorize mirroring again. Your Apple Account and network settings will not change."))
         }
         .sheet(isPresented: $model.showBackups) { BackupsView(model: model) }
-        .sheet(isPresented: $model.showAbout) { AboutView() }
+        .sheet(isPresented: $model.showAbout) { AboutView(model: model) }
     }
     private var content: some View {
         VStack(alignment: .leading, spacing: 20) {
                 connectionCard
                 VStack(spacing: 0) {
-                    sectionLabel("CONNECTION CHECK") {
-                        Button(action: model.scan) { Label(model.isBusy ? "Checking" : "Run check", systemImage: "arrow.clockwise").font(.system(size: 11, weight: .medium)) }
-                            .buttonStyle(.plain).disabled(model.isBusy || model.preview).help("Read-only checks. No settings are changed.")
+                    sectionLabel(model.text("CONNECTION CHECK")) {
+                        Button(action: model.scan) { Label(model.text(model.isBusy ? "Checking" : "Run check"), systemImage: "arrow.clockwise").font(.system(size: 11, weight: .medium)) }
+                            .buttonStyle(.plain).disabled(model.isBusy || model.preview).help(model.text("Read-only checks. No settings are changed."))
                     }.padding(.bottom, 8)
                     ForEach(model.checks) { check in checkRow(check) }
                 }
                 Rectangle().fill(Palette.ink.opacity(0.13)).frame(height: 1)
                 VStack(alignment: .leading, spacing: 12) {
-                    sectionLabel("REPAIR & RECOVERY") { Text("A backup comes first.").font(.system(size: 10)).foregroundStyle(Palette.secondary) }
+                    sectionLabel(model.text("REPAIR & RECOVERY")) { Text(model.text("A backup comes first.")).font(.system(size: 10)).foregroundStyle(Palette.secondary) }
                     HStack(spacing: 12) {
                         Image(systemName: "wand.and.stars").font(.system(size: 23, weight: .light)).foregroundStyle(model.report?.canRepair == true ? Palette.orange : Palette.secondary).frame(width: 32)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Rebuild pairing cache").font(.system(size: 13, weight: .medium))
-                            Text("For a pairing that never completes").font(.system(size: 11)).foregroundStyle(Palette.secondary)
+                            Text(model.text("Rebuild pairing cache")).font(.system(size: 13, weight: .medium))
+                            Text(model.text("For a pairing that never completes")).font(.system(size: 11)).foregroundStyle(Palette.secondary)
                         }
                         Spacer(minLength: 0)
-                        Button("Repair…") { model.showRepairConfirmation = true }.buttonStyle(OrangeButtonStyle()).disabled(model.isBusy || model.report?.canRepair != true)
-                            .help("Available after checks find repeated pairing failures.")
+                        Button(model.text("Repair…")) { model.showRepairConfirmation = true }.buttonStyle(OrangeButtonStyle()).disabled(model.isBusy || model.report?.canRepair != true)
+                            .help(model.text("Available after checks find repeated pairing failures."))
                     }
                     HStack(spacing: 12) {
                         Image(systemName: "clock.arrow.circlepath").font(.system(size: 21, weight: .light)).foregroundStyle(Palette.secondary).frame(width: 32)
-                        Text("Restore a backup").font(.system(size: 13))
+                        Text(model.text("Restore a backup")).font(.system(size: 13))
                         Spacer()
-                        Button("View backups", action: { model.refreshBackups(); model.showBackups = true }).font(.system(size: 11, weight: .medium)).buttonStyle(.plain).foregroundStyle(Palette.secondary).disabled(model.isBusy || model.preview)
+                        Button(model.text("View backups"), action: { model.refreshBackups(); model.showBackups = true }).font(.system(size: 11, weight: .medium)).buttonStyle(.plain).foregroundStyle(Palette.secondary).disabled(model.isBusy || model.preview)
                         Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold)).foregroundStyle(Palette.secondary)
                     }.padding(.top, 6)
                 }
                 if let failure = model.failure {
-                    message(failure, symbol: "exclamationmark.circle", color: .red)
-                } else if let notice = model.notice { message(notice, symbol: "checkmark.circle", color: Palette.green) }
+                    message(model.text(failure), symbol: "exclamationmark.circle", color: .red)
+                } else if let notice = model.notice { message(model.text(notice), symbol: "checkmark.circle", color: Palette.green) }
                 if model.report?.pairing == .inaccessible {
-                    Button("Allow folder access…", action: model.allowFolder).buttonStyle(OrangeButtonStyle()).disabled(model.isBusy)
+                    Button(model.text("Allow folder access…"), action: model.allowFolder).buttonStyle(OrangeButtonStyle()).disabled(model.isBusy)
                 }
         }.padding(.horizontal, 22).padding(.bottom, 20)
     }
     private var header: some View {
-        HStack {
-            HStack(spacing: 5) {
-                Image(systemName: "iphone").font(.system(size: 16, weight: .medium)).foregroundStyle(Palette.orange)
-                Image(systemName: "link").font(.system(size: 10)).foregroundStyle(Palette.secondary)
-            }.frame(width: 42, alignment: .leading)
-            Spacer()
-            Text("MirrorMate").font(.system(size: 13, weight: .medium))
-            Spacer()
-            Button(action: { model.showAbout = true }) { Image(systemName: "gearshape.fill").font(.system(size: 16)) }.buttonStyle(.plain).foregroundStyle(Palette.secondary).frame(width: 42, alignment: .trailing).help("About MirrorMate")
+        ZStack {
+            Text(model.text("MirrorMate")).font(.system(size: 13, weight: .medium))
+            HStack {
+                HStack(spacing: 5) {
+                    Image(systemName: "iphone").font(.system(size: 16, weight: .medium)).foregroundStyle(Palette.orange)
+                    Image(systemName: "link").font(.system(size: 10)).foregroundStyle(Palette.secondary)
+                }
+                Spacer()
+                HStack(spacing: 14) {
+                    Button { model.keepOpen.toggle() } label: {
+                        Image(systemName: model.keepOpen ? "pin.fill" : "pin").font(.system(size: 14)).foregroundStyle(model.keepOpen ? Palette.orange : Palette.secondary)
+                    }.buttonStyle(.plain)
+                        .help(model.text(model.keepOpen ? "Pinned: clicking elsewhere keeps this panel open" : "Unpinned: clicking elsewhere closes this panel"))
+                        .accessibilityLabel(model.text("Keep open"))
+                        .accessibilityValue(model.text(model.keepOpen ? "On" : "Off"))
+                    Button(action: { model.showAbout = true }) { Image(systemName: "gearshape.fill").font(.system(size: 16)) }.buttonStyle(.plain).foregroundStyle(Palette.secondary).help(model.text("Settings"))
+                    Button { model.closePanel?() } label: { Image(systemName: "xmark").font(.system(size: 12, weight: .medium)) }.buttonStyle(.plain).foregroundStyle(Palette.secondary).help(model.text("Close panel")).keyboardShortcut("w")
+                }
+            }
         }.padding(.horizontal, 24).padding(.top, 19).padding(.bottom, 22)
     }
     private var connectionCard: some View {
@@ -101,7 +111,7 @@ struct PanelView: View {
                     Image(systemName: "iphone").font(.system(size: 25, weight: .light)).foregroundStyle(.white)
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("iPhone Mirroring").font(.system(size: 15, weight: .semibold))
+                    Text(model.text("iPhone Mirroring")).font(.system(size: 15, weight: .semibold))
                     Text(model.title).font(.system(size: 12)).foregroundStyle(Palette.secondary)
                 }
                 Spacer(minLength: 0)
@@ -111,19 +121,19 @@ struct PanelView: View {
             Text(model.detail).font(.system(size: 11.5)).foregroundStyle(Palette.secondary).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
             HStack {
                 Circle().fill(model.report?.canRepair == true ? Palette.orange : (model.report?.pairing == .paired ? Palette.green : Palette.secondary.opacity(0.5))).frame(width: 5, height: 5)
-                Text(model.report?.canRepair == true ? "Repair available" : model.checkedLabel).font(.system(size: 10, weight: .medium)).foregroundStyle(Palette.secondary)
+                Text(model.report?.canRepair == true ? model.text("Repair available") : model.checkedLabel).font(.system(size: 10, weight: .medium)).foregroundStyle(Palette.secondary)
                 Spacer()
-                Button(action: model.openMirroring) { HStack(spacing: 5) { Text("Open mirroring"); Image(systemName: "arrow.up.right").font(.system(size: 8, weight: .bold)) }.font(.system(size: 10, weight: .medium)) }.buttonStyle(.plain).disabled(model.isBusy || model.preview)
+                Button(action: model.openMirroring) { HStack(spacing: 5) { Text(model.text("Open mirroring")); Image(systemName: "arrow.up.right").font(.system(size: 8, weight: .bold)) }.font(.system(size: 10, weight: .medium)) }.buttonStyle(.plain).disabled(model.isBusy || model.preview)
             }
         }.padding(16).background(Palette.card, in: RoundedRectangle(cornerRadius: 12))
     }
     private func checkRow(_ item: CheckItem) -> some View {
         HStack(spacing: 11) {
-            if item.id == "bluetooth" { Text("ᛒ").font(.system(size: 24, weight: .light)).foregroundStyle(Palette.secondary).frame(width: 28) }
+            if item.id == "bluetooth" { Text(model.text("ᛒ")).font(.system(size: 24, weight: .light)).foregroundStyle(Palette.secondary).frame(width: 28) }
             else { Image(systemName: item.symbol).font(.system(size: 18, weight: .regular)).foregroundStyle(Palette.secondary).frame(width: 28) }
-            Text(item.title).font(.system(size: 13))
+            Text(model.text(item.title)).font(.system(size: 13))
             Spacer()
-            Text(model.isBusy ? "Checking…" : item.value).font(.system(size: 12, weight: item.state == .attention ? .medium : .regular)).foregroundStyle(item.state == .attention ? Palette.orange : Palette.secondary)
+            Text(model.text(model.isBusy ? "Checking…" : item.value)).font(.system(size: 12, weight: item.state == .attention ? .medium : .regular)).foregroundStyle(item.state == .attention ? Palette.orange : Palette.secondary)
             Circle().fill(dotColor(item.state)).frame(width: 6, height: 6).padding(.leading, 6)
         }.padding(.horizontal, 5).frame(height: 38)
         .accessibilityElement(children: .combine)
@@ -140,11 +150,11 @@ struct PanelView: View {
             Rectangle().fill(Palette.ink.opacity(0.13)).frame(height: 1).padding(.horizontal, 22)
             HStack(spacing: 6) {
                 Image(systemName: "lock.shield").font(.system(size: 11))
-                Text(model.preview ? "Interface preview · sample results" : "On your Mac. No uploads.").font(.system(size: 10))
+                Text(model.text(model.preview ? "Interface preview · sample results" : "On your Mac. No uploads.")).font(.system(size: 10))
                 Spacer(minLength: 4)
-                Button(action: model.copyReport) { Image(systemName: "doc.on.doc").font(.system(size: 12)) }.buttonStyle(.plain).disabled(model.report == nil || model.isBusy || model.preview).help("Copy a report without personal details")
-                Button { NSWorkspace.shared.open(ProjectLinks.repository) } label: { Image(systemName: "chevron.left.forwardslash.chevron.right").font(.system(size: 12)) }.buttonStyle(.plain).padding(.horizontal, 6).help("Source code on GitHub")
-                Button { NSApp.terminate(nil) } label: { Text("Quit  ⌘Q").font(.system(size: 10, weight: .medium)).padding(.horizontal, 10).padding(.vertical, 5).background(Palette.ink.opacity(0.045), in: Capsule()) }.keyboardShortcut("q").buttonStyle(.plain).disabled(model.isBusy)
+                Button(action: model.copyReport) { Image(systemName: "doc.on.doc").font(.system(size: 12)) }.buttonStyle(.plain).disabled(model.report == nil || model.isBusy || model.preview).help(model.text("Copy a report without personal details"))
+                Button { NSWorkspace.shared.open(ProjectLinks.repository) } label: { Image(systemName: "chevron.left.forwardslash.chevron.right").font(.system(size: 12)) }.buttonStyle(.plain).padding(.horizontal, 6).help(model.text("Source code on GitHub"))
+                Button { NSApp.terminate(nil) } label: { Text(model.text("Quit  ⌘Q")).font(.system(size: 10, weight: .medium)).padding(.horizontal, 10).padding(.vertical, 5).background(Palette.ink.opacity(0.045), in: Capsule()) }.keyboardShortcut("q").buttonStyle(.plain).disabled(model.isBusy)
             }.foregroundStyle(Palette.secondary).padding(.horizontal, 24).padding(.vertical, 14)
         }
     }
@@ -165,34 +175,43 @@ struct BackupsView: View {
     @State private var selected: BackupRecord?
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack { Text("Your backups").font(.system(size: 20, weight: .semibold)); Spacer(); Button("Done") { dismiss() } }
-            Text("Restore a pairing cache saved by MirrorMate. The current cache will also be kept.").font(.system(size: 12)).foregroundStyle(.secondary)
-            if model.backupRecords.isEmpty { ContentUnavailableView("No backups yet", systemImage: "clock.arrow.circlepath", description: Text("MirrorMate makes one before every repair.")) }
+            HStack { Text(model.text("Your backups")).font(.system(size: 20, weight: .semibold)); Spacer(); Button(model.text("Done")) { dismiss() } }
+            Text(model.text("Restore a pairing cache saved by MirrorMate. The current cache will also be kept.")).font(.system(size: 12)).foregroundStyle(.secondary)
+            if model.backupRecords.isEmpty { ContentUnavailableView(model.text("No backups yet"), systemImage: "clock.arrow.circlepath", description: Text(model.text("MirrorMate makes one before every repair."))) }
             else {
                 ScrollView {
                     ForEach(model.backupRecords) { backup in
-                        HStack { VStack(alignment: .leading, spacing: 4) { Text(backup.createdAt.formatted(date: .abbreviated, time: .shortened)).font(.system(size: 13, weight: .medium)); Text("Original pairing cache").font(.system(size: 11)).foregroundStyle(.secondary) }; Spacer(); Button("Restore…") { selected = backup }.buttonStyle(OrangeButtonStyle()) }.padding(12).background(.black.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
+                        HStack { VStack(alignment: .leading, spacing: 4) { Text(model.backupDate(backup.createdAt)).font(.system(size: 13, weight: .medium)); Text(model.text("Original pairing cache")).font(.system(size: 11)).foregroundStyle(.secondary) }; Spacer(); Button(model.text("Restore…")) { selected = backup }.buttonStyle(OrangeButtonStyle()) }.padding(12).background(.black.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
                     }
                 }.frame(maxHeight: 230)
             }
-            Button("Show backup folder", action: model.showBackupFolder).buttonStyle(.link)
+            Button(model.text("Show backup folder"), action: model.showBackupFolder).buttonStyle(.link)
         }.padding(24).frame(width: 420).background(Palette.background)
-        .alert("Restore this backup?", isPresented: Binding(get: { selected != nil }, set: { if !$0 { selected = nil } })) {
-            Button("Cancel", role: .cancel) { selected = nil }
-            Button("Restore backup") { if let selected { model.restore(selected) }; selected = nil }
-        } message: { Text("iPhone Mirroring will close and pairing will restart. The current cache will be preserved too.") }
+        .alert(model.text("Restore this backup?"), isPresented: Binding(get: { selected != nil }, set: { if !$0 { selected = nil } })) {
+            Button(model.text("Cancel"), role: .cancel) { selected = nil }
+            Button(model.text("Restore backup")) { if let selected { model.restore(selected) }; selected = nil }
+        } message: { Text(model.text("iPhone Mirroring will close and pairing will restart. The current cache will be preserved too.")) }
     }
 }
 
 struct AboutView: View {
+    @ObservedObject var model: MateModel
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
-            HStack { Text("MirrorMate").font(.system(size: 24, weight: .semibold)); Spacer(); Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.1").font(.system(size: 12)).foregroundStyle(.secondary) }
-            Text("A little help connecting.").font(.system(size: 15)).foregroundStyle(Palette.orange)
-            Text("A small, independent menu bar companion for iPhone Mirroring. Check your connection, rebuild a stuck pairing cache, and keep a way back.").font(.system(size: 12)).lineSpacing(4)
-            Text("Checks and repairs run locally. MirrorMate does not upload diagnostics, read your passwords, or sign you out. Repair support is limited to the recognized pairing-cache format; not every connection issue can be repaired.").font(.system(size: 11)).foregroundStyle(.secondary).lineSpacing(4)
-            HStack { Link("View source", destination: ProjectLinks.repository); Spacer(); Button("Done") { dismiss() } }.font(.system(size: 12))
+            HStack { Text(model.text("MirrorMate")).font(.system(size: 24, weight: .semibold)); Spacer(); Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.2").font(.system(size: 12)).foregroundStyle(.secondary) }
+            Text(model.text("A little help connecting.")).font(.system(size: 15)).foregroundStyle(Palette.orange)
+            Divider()
+            Picker(model.text("Language"), selection: $model.language) {
+                Text(model.text("Follow system")).tag(AppLanguage.system)
+                Text("简体中文").tag(AppLanguage.simplifiedChinese)
+                Text("English").tag(AppLanguage.english)
+            }.pickerStyle(.menu).font(.system(size: 12))
+            Toggle(model.text("Keep panel open when clicking elsewhere"), isOn: $model.keepOpen).font(.system(size: 12))
+            Divider()
+            Text(model.text("A small, independent menu bar companion for iPhone Mirroring. Check your connection, rebuild a stuck pairing cache, and keep a way back.")).font(.system(size: 12)).lineSpacing(4)
+            Text(model.text("Checks and repairs run locally. MirrorMate does not upload diagnostics, read your passwords, or sign you out. Repair support is limited to the recognized pairing-cache format; not every connection issue can be repaired.")).font(.system(size: 11)).foregroundStyle(.secondary).lineSpacing(4)
+            HStack { Link(model.text("View source"), destination: ProjectLinks.repository); Spacer(); Button(model.text("Done")) { dismiss() } }.font(.system(size: 12))
         }.padding(28).frame(width: 410).background(Palette.background)
     }
 }

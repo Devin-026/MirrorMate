@@ -16,11 +16,20 @@ enum ProjectLinks {
     @Published var showRepairConfirmation = false
     @Published var showBackups = false
     @Published var showAbout = false
+    @Published var language: AppLanguage {
+        didSet { if !preview { UserDefaults.standard.set(language.rawValue, forKey: "InterfaceLanguage") } }
+    }
+    @Published var keepOpen: Bool {
+        didSet { if !preview { UserDefaults.standard.set(keepOpen, forKey: "KeepPanelOpen") } }
+    }
+    var closePanel: (() -> Void)?
     let preview: Bool
     private var scopedFolder: URL?
 
-    init(preview: Bool = false) {
+    init(preview: Bool = false, languageOverride: AppLanguage? = nil) {
         self.preview = preview
+        language = languageOverride ?? AppLanguage(rawValue: UserDefaults.standard.string(forKey: "InterfaceLanguage") ?? "system") ?? .system
+        keepOpen = UserDefaults.standard.object(forKey: "KeepPanelOpen") as? Bool ?? true
         if preview {
             report = DiagnosticReport(checks: [CheckItem("mac", "This Mac", "desktopcomputer", "Compatible", .pass), CheckItem("wifi", "Wi-Fi", "wifi", "On", .pass), CheckItem("bluetooth", "Bluetooth", "bluetooth", "On", .pass), CheckItem("pairing", "System pairing", "link", "In progress", .attention), CheckItem("session", "Mirroring session", "rectangle.on.rectangle", "Not connected", .unknown)], pairing: .pending, hasRepeatedPairingFailure: true, recentFrame: false, osVersion: "27.2.1", architecture: "arm64", checkedAt: Date())
         } else if let data = UserDefaults.standard.data(forKey: "PairingFolderBookmark") {
@@ -30,11 +39,18 @@ enum ProjectLinks {
         refreshBackups()
     }
     var checks: [CheckItem] { report?.checks ?? Diagnostics.initialChecks }
-    var title: String { isBusy ? "Working on your connection" : report?.summary ?? "A little help connecting" }
-    var detail: String { isBusy ? activity : report?.detail ?? "Check what’s getting between your Mac and iPhone. Everything stays on this Mac." }
+    var localizer: Localizer { Localizer(language: language) }
+    func text(_ english: String) -> String { localizer.text(english) }
+    var title: String { text(isBusy ? "Working on your connection" : report?.summary ?? "A little help connecting") }
+    var detail: String { text(isBusy ? activity : report?.detail ?? "Check what’s getting between your Mac and iPhone. Everything stays on this Mac.") }
     var checkedLabel: String {
-        guard let date = report?.checkedAt else { return "Local checks only" }
-        return "Checked " + date.formatted(date: .omitted, time: .shortened)
+        guard let date = report?.checkedAt else { return text("Local checks only") }
+        let formatter = DateFormatter(); formatter.locale = localizer.locale; formatter.timeStyle = .short
+        return text("Checked") + " " + formatter.string(from: date)
+    }
+    func backupDate(_ date: Date) -> String {
+        let formatter = DateFormatter(); formatter.locale = localizer.locale; formatter.dateStyle = .medium; formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
     func scan() {
         guard !isBusy, !preview else { return }
@@ -53,14 +69,18 @@ enum ProjectLinks {
     }
     func copyReport() {
         guard let report else { return }
-        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(report.shareableText, forType: .string)
+        let output = report.shareableText.components(separatedBy: "\n").map { line -> String in
+            let parts = line.components(separatedBy: ": ")
+            return parts.count == 2 ? text(parts[0]) + ": " + text(parts[1]) : text(line)
+        }.joined(separator: "\n")
+        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(output, forType: .string)
         notice = "A report without personal details was copied."
     }
     func allowFolder() {
         let panel = NSOpenPanel()
-        panel.title = "Allow access to the pairing folder"
-        panel.message = "Choose group.com.apple.replicatord. MirrorMate uses this folder only to inspect, back up, or rebuild local pairing."
-        panel.prompt = "Allow folder access"
+        panel.title = text("Allow access to the pairing folder")
+        panel.message = text("Choose group.com.apple.replicatord. MirrorMate uses this folder only to inspect, back up, or rebuild local pairing.")
+        panel.prompt = text("Allow folder access")
         panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.allowsMultipleSelection = false; panel.showsHiddenFiles = true
         panel.directoryURL = RepairPaths.live.cache.deletingLastPathComponent()
         guard panel.runModal() == .OK, let url = panel.url else { return }
