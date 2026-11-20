@@ -1,0 +1,51 @@
+name: Connection problem
+description: Report an iPhone Mirroring connection issue or a MirrorMate error.
+title: "[Connection] "
+body:
+  - type: markdown
+    attributes:
+      value: "Please keep passwords, Apple Account details, device identifiers, cache databases, and raw logs out of this report."
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "27.2.1"
+    validations:
+      required: true
+  - type: input
+    id: ios
+    attributes:
+      label: iOS version
+    validations:
+      required: true
+  - type: dropdown
+    id: mac
+    attributes:
+      label: Mac hardware
+      options:
+        - Apple silicon
+        - Intel with Apple T2
+        - Other or unsure
+    validations:
+      required: true
+  - type: dropdown
+    id: migration
+    attributes:
+      label: Was this Mac migrated from another Mac?
+      options:
+        - "Yes"
+        - "No"
+        - Unsure
+  - type: textarea
+    id: report
+    attributes:
+      label: MirrorMate report
+      description: Use the Copy report button. Review the text before posting.
+      render: text
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Include the visible error and which steps you tried. Does Apple’s mirroring app reach authorization or show your phone’s screen?
+    validations:
+      required: true
