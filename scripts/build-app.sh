@@ -39,5 +39,5 @@ codesign --force --sign - "$task_app"
 codesign --verify --strict "$task_app"
 task_zip="dist/MirrorMate-0.1.0-${task_arch}.zip"
 ditto -c -k --sequesterRsrc --keepParent "$task_app" "$task_zip"
-shasum -a 256 "$task_zip" > "$task_zip.sha256"
+(cd dist; shasum -a 256 "MirrorMate-0.1.0-${task_arch}.zip" > "MirrorMate-0.1.0-${task_arch}.zip.sha256")
 echo "Built $task_zip"
